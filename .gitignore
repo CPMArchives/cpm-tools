@@ -1,0 +1,4 @@
+build/*.COM
+build/SHA256SUMS.txt
+*.log
+.DS_Store
