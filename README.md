@@ -27,9 +27,10 @@ prints every report, while `/STATE` prints the current session state.
 
 ## Project boundary
 
-SYSINFO is independent of the BetterCP/M compatibility ledger and conformance
-suite. The `cpm-compatibility` project may bundle a pinned binary on convenience
-disk images, but this repository is the source and release authority.
+SYSINFO is independent of the CP/M 2.2 compatibility ledger and conformance
+suite. The `cpm-2.2-compatibility-suite` project may bundle a pinned binary on
+convenience disk images, but this repository is the source and release
+authority.
 
 ## License
 
