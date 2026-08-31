@@ -154,8 +154,9 @@ only documented results. Admission rules are in `docs/BDOSPROBE-DESIGN.md`.
 
 Near term:
 
-- Compare function 12 behavior on Montezuma Micro CP/M and other CP/M-compatible
-  systems used during BetterCP/M development.
+- Compare dev2 behavior on additional CP/M-compatible systems used during
+  BetterCP/M development. Montezuma Micro CP/M 2.2 and both z80pack CPU modes
+  have been exercised successfully.
 - Add function 32 only in its documented query form, E=FFH, after an unchanged
   user-state test is in place.
 

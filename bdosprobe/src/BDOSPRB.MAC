@@ -68,7 +68,7 @@ START:  LD      SP,STACKTOP
         CALL    REPORT12
         JP      0000H
 
-; Dev1 accepts no operand and one exact option.  Words are folded to upper
+; Accept no operand and one exact option.  Words are folded to upper
 ; case so old CCPs and terminals which supply lower case remain convenient.
 GETARG: XOR     A
         LD      (MODE),A

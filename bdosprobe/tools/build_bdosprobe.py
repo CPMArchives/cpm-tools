@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build BDOSPROBE under CP/M and test its 8080-compatible dev1 probe."""
+"""Build BDOSPROBE under CP/M and test its 8080-compatible dev2 probes."""
 from __future__ import annotations
 
 import argparse

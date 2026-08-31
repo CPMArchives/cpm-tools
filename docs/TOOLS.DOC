@@ -298,6 +298,13 @@ to the safety matrix in BDOSPROBE-DESIGN.md in the source repository. Pure
 observations come first; writes, reset, and termination remain excluded from
 the ordinary probe.
 
+VALIDATION
+
+Dev2 has passed native ZSM4/LINK builds and execution under z80pack in Z80 and
+Intel 8080 modes. It has also been exercised successfully on Montezuma Micro
+CP/M 2.2 in the TRS-80 emulator. Raw flags, SP, and undocumented registers may
+differ between implementations and are not conformance requirements.
+
 
 9. BUILDING THE NATIVE TOOLS
 

@@ -21,20 +21,30 @@ The CP/M executable is `BDOSPRB.COM`, shortened to fit the 8.3 filename limit.
 ## Dev2 boundary
 
 Dev1 established function 12. Dev2 also admits functions 11, 24, 25, 27, 29,
-and 31, grouped as `/CONSOLE`, `/DISK`, and `/MEM`. Before each call it records
-the intended inputs
-`C=0CH` and `DE=0000H`. Immediately after return it saves A, HL, BC, DE, flags,
-and the balanced stack pointer. A and HL are shown as the documented version
-results; BC, DE, flags, and SP are raw harness observations.
+and 31, grouped as `/CONSOLE`, `/DISK`, and `/MEM`. Before each call it reports
+the selected function number in C and `DE=0000H`. Immediately after return it
+saves A, HL, BC, DE, flags, and the balanced stack pointer. Only the documented
+result of each function is interpreted; the remaining registers are raw
+harness observations.
 
 The source uses only 8080 instructions despite Zilog assembly spelling. The
 same executable is tested under z80pack's Z80 and Intel 8080 modes.
 
 No dev2 call writes a disk or intentionally changes BDOS process state.
 
+## Validation record
+
+Dev2 has been assembled with ZSM4 and Digital Research LINK and executed under
+z80pack in both Z80 and Intel 8080 modes. It has also been exercised on
+Montezuma Micro CP/M 2.2 in the TRS-80 emulator. On that system the version
+probe returned A=22H and HL=0022H; the current drive was B; the read-only
+vector was 0000H; the allocation-vector and DPB addresses were F77DH and
+F5F8H; and console status reported no pending character. Values such as flags,
+SP, and undocumented return registers are observations, not required results.
+
 ## Planned sequence
 
-1. Compare the observational returns across several CP/M-compatible systems.
+1. Compare the observational returns across additional CP/M-compatible systems.
 2. Add query-sentinel calls such as function 32 only after exact input-state
    display and unchanged-state tests exist.
 3. Design save/restore guards before admitting any reversible state change.

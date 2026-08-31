@@ -6,6 +6,8 @@
 - Added `/MEM` probes for the allocation-vector and DPB addresses.
 - Added `/CONSOLE` using the observational console-status call.
 - Reused the dev1 raw result-capture harness for every call.
+- Validated all dev2 groups on Montezuma Micro CP/M 2.2 and under z80pack in
+  Z80 and Intel 8080 modes.
 
 ## 0.1.0-dev1 — 2026-08-31
 

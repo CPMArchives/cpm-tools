@@ -20,7 +20,8 @@ BDOSPRB /VER[SION]
 ```
 
 Run `./build.sh` to assemble with ZSM4 and Digital Research LINK and exercise
-the result under z80pack in both Z80 and Intel 8080 modes.
+the result under z80pack in both Z80 and Intel 8080 modes. Dev2 has also been
+tested on Montezuma Micro CP/M 2.2 in the TRS-80 emulator.
 
 The probe-selection rules and future sequence are in
 [`docs/BDOSPROBE-DESIGN.md`](../docs/BDOSPROBE-DESIGN.md).
