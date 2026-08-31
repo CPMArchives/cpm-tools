@@ -18,9 +18,11 @@ The CP/M executable is `BDOSPRB.COM`, shortened to fit the 8.3 filename limit.
 | Persistent write | create, write, delete, rename, set attributes | Excluded from ordinary probes. Any future destructive suite must be separate, explicit, and run only on disposable media. |
 | Termination or reset | warm boot, terminate, reset disk system | Excluded until an isolated child-probe design can preserve and report results safely. |
 
-## Dev1 boundary
+## Dev2 boundary
 
-Dev1 calls only function 12. Before the call it records the intended inputs
+Dev1 established function 12. Dev2 also admits functions 11, 24, 25, 27, 29,
+and 31, grouped as `/CONSOLE`, `/DISK`, and `/MEM`. Before each call it records
+the intended inputs
 `C=0CH` and `DE=0000H`. Immediately after return it saves A, HL, BC, DE, flags,
 and the balanced stack pointer. A and HL are shown as the documented version
 results; BC, DE, flags, and SP are raw harness observations.
@@ -28,12 +30,12 @@ results; BC, DE, flags, and SP are raw harness observations.
 The source uses only 8080 instructions despite Zilog assembly spelling. The
 same executable is tested under z80pack's Z80 and Intel 8080 modes.
 
+No dev2 call writes a disk or intentionally changes BDOS process state.
+
 ## Planned sequence
 
-1. Compare function 12 returns across several CP/M-compatible systems.
-2. Add other pure observational calls individually, keeping raw and
-   interpreted results separate.
-3. Add query-sentinel calls such as function 32 only after exact input-state
+1. Compare the observational returns across several CP/M-compatible systems.
+2. Add query-sentinel calls such as function 32 only after exact input-state
    display and unchanged-state tests exist.
-4. Design save/restore guards before admitting any reversible state change.
-5. Keep persistent writes, termination, and reset outside the ordinary probe.
+3. Design save/restore guards before admitting any reversible state change.
+4. Keep persistent writes, termination, and reset outside the ordinary probe.

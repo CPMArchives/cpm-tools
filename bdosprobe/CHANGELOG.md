@@ -1,5 +1,12 @@
 # BDOSPROBE changelog
 
+## 0.1.0-dev2 — 2026-08-31
+
+- Added `/DISK` probes for the login vector, current disk, and read-only vector.
+- Added `/MEM` probes for the allocation-vector and DPB addresses.
+- Added `/CONSOLE` using the observational console-status call.
+- Reused the dev1 raw result-capture harness for every call.
+
 ## 0.1.0-dev1 — 2026-08-31
 
 - Added the reusable post-BDOS register capture harness.

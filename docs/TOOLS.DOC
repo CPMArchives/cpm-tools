@@ -271,25 +271,29 @@ PURPOSE
 
 BDOSPROBE records the register-level result of selected documented BDOS calls.
 The CP/M program is named BDOSPRB.COM because CP/M filenames have an
-eight-character stem. Dev1 contains only the read-only function 12, Return
-Version Number, probe.
+eight-character stem. Dev2 contains only observational version, console,
+disk-state, allocation-vector, and DPB calls.
 
 COMMANDS
 
     BDOSPRB                 Run the CP/M version probe
     BDOSPRB /CPM            Run the CP/M version probe
+    BDOSPRB /DISK           Login, current-disk and read-only vectors
+    BDOSPRB /MEM            Allocation-vector and DPB addresses
+    BDOSPRB /CONSOLE        Console input status
     BDOSPRB /H              Command help (also /HELP)
     BDOSPRB /INFO           Build and safety information
     BDOSPRB /VER            Version (also /VERSION)
 
-DEV1 REPORT
+DEV2 REPORT
 
-The input is C=0CH and DE=0000H. On return, dev1 reports A, BC, DE, HL, the
-condition flags, and the balanced stack pointer. Function 12 documents the
-version result in A and HL. The other values are raw observations which may
-help compare BDOS implementations; they are not advertised as CP/M promises.
+Every probe shows its function number and DE input. On return, dev2 reports A,
+BC, DE, HL, the condition flags, and the balanced stack pointer. It interprets
+only the documented result for that call. Other values are raw observations
+which may help compare implementations; they are not advertised as CP/M
+promises.
 
-Dev1 changes no disk or process state. Future probes are admitted according
+Dev2 changes no disk or process state. Future probes are admitted according
 to the safety matrix in BDOSPROBE-DESIGN.md in the source repository. Pure
 observations come first; writes, reset, and termination remain excluded from
 the ordinary probe.

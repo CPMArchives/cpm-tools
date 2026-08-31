@@ -69,11 +69,12 @@ The current development release is `COMINFO 0.1.0-dev2`.
 ### [BDOSPROBE](bdosprobe/)
 
 A CP/M-resident behavior probe for documented BDOS calls. The CP/M command is
-`BDOSPRB` to fit the eight-character filename limit. Dev1 invokes only the
-read-only Return Version Number call and captures the complete returned
-register state without treating incidental values as part of the interface.
+`BDOSPRB` to fit the eight-character filename limit. Dev2 provides read-only
+version, console-status, disk-state, allocation-vector, and DPB probes and
+captures the complete returned register state without treating incidental
+values as part of the interface.
 
-The current development release is `BDOSPROBE 0.1.0-dev1`.
+The current development release is `BDOSPROBE 0.1.0-dev2`.
 
 ## Planned tools
 
