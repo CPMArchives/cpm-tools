@@ -145,20 +145,20 @@ COMINFO is not intended to become a general disassembler.
 
 ## BDOSPROBE
 
-Current release: `0.1.0-dev2` (`BDOSPRB.COM` under CP/M).
+Current release: `0.1.0-dev3` (`BDOSPRB.COM` under CP/M).
 
 Dev1 provided the common result-capture harness and version probe. Dev2 adds
 console status; login, current-disk and read-only vectors; and allocation-vector
 and DPB addresses. It records A, BC, DE, HL, flags, and SP, while interpreting
-only documented results. Admission rules are in `docs/BDOSPROBE-DESIGN.md`.
+only documented results. Dev3 adds function 32 strictly in query mode and
+checks that repeated queries leave the user number unchanged. Admission rules
+are in `docs/BDOSPROBE-DESIGN.md`.
 
 Near term:
 
-- Compare dev2 behavior on additional CP/M-compatible systems used during
+- Compare dev3 behavior on additional CP/M-compatible systems used during
   BetterCP/M development. Montezuma Micro CP/M 2.2 and both z80pack CPU modes
   have been exercised successfully.
-- Add function 32 only in its documented query form, E=FFH, after an unchanged
-  user-state test is in place.
 
 Possible later work:
 

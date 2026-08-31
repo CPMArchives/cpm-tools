@@ -18,7 +18,7 @@ The CP/M executable is `BDOSPRB.COM`, shortened to fit the 8.3 filename limit.
 | Persistent write | create, write, delete, rename, set attributes | Excluded from ordinary probes. Any future destructive suite must be separate, explicit, and run only on disposable media. |
 | Termination or reset | warm boot, terminate, reset disk system | Excluded until an isolated child-probe design can preserve and report results safely. |
 
-## Dev2 boundary
+## Dev3 boundary
 
 Dev1 established function 12. Dev2 also admits functions 11, 24, 25, 27, 29,
 and 31, grouped as `/CONSOLE`, `/DISK`, and `/MEM`. Before each call it reports
@@ -31,6 +31,11 @@ The source uses only 8080 instructions despite Zilog assembly spelling. The
 same executable is tested under z80pack's Z80 and Intel 8080 modes.
 
 No dev2 call writes a disk or intentionally changes BDOS process state.
+
+Dev3 admits function 32 only with E=FFH, the documented Get User Number
+sentinel. `/USER` performs two query-only calls, reports the returned user
+number, and compares the results as an unchanged-state check. The set-user
+form is not present.
 
 ## Validation record
 
@@ -45,7 +50,5 @@ SP, and undocumented return registers are observations, not required results.
 ## Planned sequence
 
 1. Compare the observational returns across additional CP/M-compatible systems.
-2. Add query-sentinel calls such as function 32 only after exact input-state
-   display and unchanged-state tests exist.
-3. Design save/restore guards before admitting any reversible state change.
-4. Keep persistent writes, termination, and reset outside the ordinary probe.
+2. Design save/restore guards before admitting any reversible state change.
+3. Keep persistent writes, termination, and reset outside the ordinary probe.

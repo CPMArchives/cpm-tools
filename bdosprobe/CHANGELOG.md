@@ -1,5 +1,13 @@
 # BDOSPROBE changelog
 
+## 0.1.0-dev3 — 2026-08-31
+
+- Added `/USER` using function 32 only with the documented E=FFH query
+  sentinel.
+- Queried twice and reported whether the current user remained unchanged.
+- Extended raw input reporting so DE shows the actual value supplied.
+- Retained 8080 compatibility and dual-CPU execution tests.
+
 ## 0.1.0-dev2 — 2026-08-31
 
 - Added `/DISK` probes for the login vector, current disk, and read-only vector.
