@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0-dev8
+
+- Add the exact `/HELP` alias and clarify long aliases on the help screen.
+
 ## 1.0.0-dev7
 
 - Added `/MAP` for the documented public memory layout.

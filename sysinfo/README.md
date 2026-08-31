@@ -1,5 +1,7 @@
 # SYSINFO
 
+Future development is tracked in the suite-wide `../ROADMAP.md`.
+
 SYSINFO is a standalone CP/M 2.2 system-information utility. It reports only
 documented, application-visible state and does not modify disk contents.
 
@@ -10,7 +12,7 @@ read-only vector), `/SPACE` (total, used, and free disk capacity), `/BIOS`
 health audit).
 Drive inventory and allocation details are available through `/DRIVES` and
 `/ALLOC`.
-`/MAP`, `/VER` (or `/VERSION`), and `/ALL:SHORT` provide concise memory,
+`/MAP`, `/VER` (also `/VERSION`), and `/ALL:SHORT` provide concise memory,
 version, and overview reports.
 
 ## Build

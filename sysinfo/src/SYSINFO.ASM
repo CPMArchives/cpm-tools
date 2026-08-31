@@ -1,6 +1,6 @@
 ; SPDX-License-Identifier: GPL-2.0-or-later
 ;
-; SYSINFO Version 1.0.0-dev7 - add map, version, and short overview reports
+; SYSINFO Version 1.0.0-dev8 - add map, version, and short overview reports
 ; Intel 8080 instruction subset, using z80asm/M80-compatible Z80 mnemonics.
 ;
 ; All system facts come from documented page-zero fields or BDOS function 12.
@@ -111,6 +111,11 @@ PCDONE:XOR     A
         LD      (PTAILN),A
 PTEST: LD      HL,OPBUF
         LD      DE,TXTH
+        CALL    STREQ
+        OR      A
+        JP      NZ,PH
+        LD      HL,OPBUF
+        LD      DE,TXTHELP
         CALL    STREQ
         OR      A
         JP      NZ,PH
@@ -1713,6 +1718,7 @@ PUTCH: PUSH    BC
         RET
 
 TXTH:   DB 'H',0
+TXTHELP:DB 'HELP',0
 TXTMEM: DB 'MEM',0
 TXTIO:  DB 'IO',0
 TXTVEC: DB 'VECTORS',0
@@ -1782,10 +1788,10 @@ HELPMSG:DB 13,10,'SYSINFO - CP/M system information',13,10,13,10
         DB '  /ALLOC [drives]  Display allocation details; default is current',13,10
         DB '  /ALLOC /LOGGED   Display allocation for logged-in drives',13,10
         DB '  /MAP      Display a concise public memory map',13,10
-        DB '  /VER      Display utility and CP/M versions (/VERSION also)',13,10
+        DB '  /VER      Display utility and CP/M versions (also /VERSION)',13,10
         DB '  /ALL:SHORT  Display a compact system and drive overview',13,10
         DB '  /ALL      Display summary and all current-drive details',13,10
-        DB '  /H        Display this help',13,10
+        DB '  /H        Display this help (also /HELP)',13,10
         DB 13,10,'Drive lists use the form A: B: C:.',13,10
         DB 13,10,'With no option, display a system summary.',13,10,'$'
 BADOPT: DB 13,10,'SYSINFO: invalid option; use SYSINFO /H',13,10,'$'
@@ -1861,7 +1867,7 @@ MAPDMAL:DB '  Default DMA:     ','$'
 RANGESEP:DB 'h-','$'
 
 VERHEAD:DB 13,10,'SYSINFO Version Report',13,10,'$'
-VERUTILITY:DB '  Utility:         1.0.0-dev7',13,10,'$'
+VERUTILITY:DB '  Utility:         1.0.0-dev8',13,10,'$'
 VERCPM: DB '  CP/M:            ','$'
 VERCPU: DB '  Processor floor: Intel 8080',13,10,'$'
 
