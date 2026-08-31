@@ -143,6 +143,32 @@ Possible later work:
 
 COMINFO is not intended to become a general disassembler.
 
+## BDOSPROBE
+
+Current release: `0.1.0-dev1` (`BDOSPRB.COM` under CP/M).
+
+Dev1 provides the common result-capture harness and one observational probe:
+BDOS function 12, Return Version Number. It records A, BC, DE, HL, flags, and
+SP, while interpreting only the documented version result. The admission
+rules are recorded in `docs/BDOSPROBE-DESIGN.md`.
+
+Near term:
+
+- Compare function 12 behavior on Montezuma Micro CP/M and other CP/M-compatible
+  systems used during BetterCP/M development.
+- Add the remaining pure observation calls one at a time, with exact inputs,
+  raw results, and documented interpretations kept distinct.
+- Add function 32 only in its documented query form, E=FFH, after an unchanged
+  user-state test is in place.
+
+Possible later work:
+
+- Add guarded probes for reversible state after save/restore and failure-path
+  behavior have been demonstrated.
+- Supply reusable evidence for BetterCP/M development without making the tool
+  dependent on BetterCP/M.
+- Keep persistent writes, reset, and termination out of the ordinary probe.
+
 ## BDOSTRACE
 
 Status: planned, advanced.

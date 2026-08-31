@@ -13,8 +13,9 @@ CONTENTS
     5. FSCK
     6. DISKEDIT
     7. COMINFO
-    8. Building the native tools
-    9. Safety and result terminology
+    8. BDOSPROBE
+    9. Building the native tools
+   10. Safety and result terminology
 
 
 1. GENERAL COMMAND CONVENTIONS
@@ -264,18 +265,48 @@ TPA, or distinguish embedded data from executable code. A reported direct
 reference is a definite byte pattern, not proof that the path is executed.
 
 
-8. BUILDING THE NATIVE TOOLS
+8. BDOSPROBE
 
-BUILD.SUB is the common rebuild script for DISKINFO, DPBCHK, FSCK, DISKEDIT
-and COMINFO. Keep
+PURPOSE
+
+BDOSPROBE records the register-level result of selected documented BDOS calls.
+The CP/M program is named BDOSPRB.COM because CP/M filenames have an
+eight-character stem. Dev1 contains only the read-only function 12, Return
+Version Number, probe.
+
+COMMANDS
+
+    BDOSPRB                 Run the CP/M version probe
+    BDOSPRB /CPM            Run the CP/M version probe
+    BDOSPRB /H              Command help (also /HELP)
+    BDOSPRB /INFO           Build and safety information
+    BDOSPRB /VER            Version (also /VERSION)
+
+DEV1 REPORT
+
+The input is C=0CH and DE=0000H. On return, dev1 reports A, BC, DE, HL, the
+condition flags, and the balanced stack pointer. Function 12 documents the
+version result in A and HL. The other values are raw observations which may
+help compare BDOS implementations; they are not advertised as CP/M promises.
+
+Dev1 changes no disk or process state. Future probes are admitted according
+to the safety matrix in BDOSPROBE-DESIGN.md in the source repository. Pure
+observations come first; writes, reset, and termination remain excluded from
+the ordinary probe.
+
+
+9. BUILDING THE NATIVE TOOLS
+
+BUILD.SUB is the common rebuild script for DISKINFO, DPBCHK, FSCK, DISKEDIT,
+COMINFO and BDOSPROBE. Keep
 BUILD.SUB, the selected tool's MAC source, ZSM4.COM and LINK.COM on one drive.
 For example:
 
     SUBMIT BUILD FSCK
 
 The argument is the program stem without an extension. Equivalent commands
-are SUBMIT BUILD DISKINFO, SUBMIT BUILD DPBCHK, SUBMIT BUILD DISKEDIT and
-SUBMIT BUILD COMINFO.
+are SUBMIT BUILD DISKINFO, SUBMIT BUILD DPBCHK, SUBMIT BUILD DISKEDIT,
+SUBMIT BUILD COMINFO and SUBMIT BUILD BDOSPRB.
 BUILD.SUB performs:
 
     ZSM4 tool=tool
@@ -285,7 +316,7 @@ SYSINFO is supplied prebuilt on the tools disk. Its current source uses the
 host z80asm build described in the repository and is not built by BUILD.SUB.
 
 
-9. SAFETY AND RESULT TERMINOLOGY
+10. SAFETY AND RESULT TERMINOLOGY
 
 The current information and checking tools are read-only. Nevertheless,
 preserve irreplaceable media before diagnostic work.

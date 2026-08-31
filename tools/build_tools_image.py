@@ -205,6 +205,9 @@ def main() -> None:
         ROOT / "diskedit/src/DISKEDIT.MAC",
         ROOT / "cominfo/build/COMINFO.COM",
         ROOT / "cominfo/src/COMINFO.MAC",
+        ROOT / "bdosprobe/build/BDOSPRB.COM",
+        ROOT / "bdosprobe/src/BDOSPRB.MAC",
+        ROOT / "docs/BDOSPROBE-DESIGN.md",
         ROOT / "BUILD.SUB",
         ROOT / "docs/TOOLS.DOC",
         ROOT / "ROADMAP.md",
@@ -225,6 +228,7 @@ def main() -> None:
             "FSCK.COM": ROOT / "fsck/build/FSCK.COM",
             "DISKEDIT.COM": ROOT / "diskedit/build/DISKEDIT.COM",
             "COMINFO.COM": ROOT / "cominfo/build/COMINFO.COM",
+            "BDOSPRB.COM": ROOT / "bdosprobe/build/BDOSPRB.COM",
             "ZSM4.COM": args.tools / "ZSM4.COM",
             "LINK.COM": args.tools / "LINK.COM",
         }
@@ -239,6 +243,8 @@ def main() -> None:
             ("FSCK.MAC", ROOT / "fsck/src/FSCK.MAC"),
             ("DISKEDIT.MAC", ROOT / "diskedit/src/DISKEDIT.MAC"),
             ("COMINFO.MAC", ROOT / "cominfo/src/COMINFO.MAC"),
+            ("BDOSPRB.MAC", ROOT / "bdosprobe/src/BDOSPRB.MAC"),
+            ("BDOSPRB.DOC", ROOT / "docs/BDOSPROBE-DESIGN.md"),
             ("BUILD.SUB", ROOT / "BUILD.SUB"),
             ("TOOLS.DOC", ROOT / "docs/TOOLS.DOC"),
             ("ROADMAP.DOC", ROOT / "ROADMAP.md"),
@@ -254,6 +260,7 @@ def main() -> None:
             b"FSCK 0.1.0-dev1\r\n"
             b"DISKEDIT 0.1.0-dev2\r\n"
             b"COMINFO 0.1.0-dev2\r\n"
+            b"BDOSPROBE 0.1.0-dev1 (command BDOSPRB)\r\n"
             b"TYPE TOOLS.DOC for commands. SUBMIT BUILD toolname rebuilds.\r\n\x1A"
         )
         payload.append(note)

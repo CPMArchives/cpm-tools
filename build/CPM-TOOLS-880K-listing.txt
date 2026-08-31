@@ -1,3 +1,6 @@
+  BDOSPRB.COM    1536 bytes
+  BDOSPRB.DOC    2368 bytes
+  BDOSPRB.MAC    9605 bytes
   BUILD.SUB        25 bytes
   COMINFO.COM    3840 bytes
   COMINFO.MAC   23703 bytes
@@ -10,9 +13,9 @@
   FSCK.COM       3456 bytes
   FSCK.MAC      26962 bytes
   LINK.COM      15616 bytes
-  README.TXT      210 bytes
-  ROADMAP.DOC    7217 bytes
+  README.TXT      250 bytes
+  ROADMAP.DOC    8300 bytes
   SYSINFO.ASM   50137 bytes
   SYSINFO.COM    7925 bytes
-  TOOLS.DOC     11076 bytes
+  TOOLS.DOC     12280 bytes
   ZSM4.COM      22400 bytes

@@ -1,0 +1,344 @@
+; SPDX-License-Identifier: GPL-2.0-or-later
+;
+;***********************************************************************
+;*                                                                     *
+;*                    B D O S P R O B E   --   DEV1                  *
+;*                                                                     *
+;*                  BDOS BEHAVIOR PROBE HARNESS                       *
+;*                                                                     *
+;***********************************************************************
+;
+; Version 0.1.0-dev1, 31 August 2026
+;
+;       ZSM4 BDOSPRB=BDOSPRB
+;       LINK BDOSPRB[A]
+;
+; Usage:
+;
+;       BDOSPRB
+;       BDOSPRB /CPM
+;
+; BDOSPROBE records the register-level behavior of selected BDOS calls.
+; The CP/M command name is BDOSPRB because a CP/M filename has no more
+; than eight characters.  Dev1 deliberately contains one probe only:
+; function 12, Return Version Number.  It makes no disk change.
+;
+; The result-capture routine saves A, BC, DE, HL, flags and SP immediately
+; after BDOS returns.  Only A and HL are documented results of function 12;
+; the other values are displayed as observations, not promises made by CP/M.
+;
+; Revision history:
+;   dev1    first result-capture harness and /CPM version probe
+;
+; Programmer's notebook:
+;   Save HL before using it to copy the other registers.  Save AF before
+;   calculating SP, since DAD SP changes the condition flags.  PUSH/POP is
+;   used to copy BC, DE and AF so the generated instructions remain usable
+;   on an 8080 as well as a Z80.
+;
+;***********************************************************************
+
+	.z80                    ; Zilog spelling, 8080 opcodes only
+	cseg
+
+BDOS    EQU     0005H
+FPRINT  EQU     9
+FVER    EQU     12
+
+START:  LD      SP,STACKTOP
+        CALL    GETARG
+        JP      C,BADARG
+        LD      A,(MODE)
+        CP      1
+        JP      Z,SHOWHELP
+        CP      2
+        JP      Z,SHOWINFO
+        CP      3
+        JP      Z,SHOWVER
+        LD      DE,BANNER
+        CALL    PRINT
+        CALL    PROBE12
+        CALL    REPORT12
+        JP      0000H
+
+; Dev1 accepts no operand and one exact option.  Words are folded to upper
+; case so old CCPs and terminals which supply lower case remain convenient.
+GETARG: XOR     A
+        LD      (MODE),A
+        LD      A,(0080H)
+        LD      B,A
+        LD      HL,0081H
+GALP:   LD      A,B
+        OR      A
+        JP      Z,GAGOOD
+        LD      A,(HL)
+        INC     HL
+        DEC     B
+        CP      ' '
+        JP      Z,GALP
+        LD      DE,TOKBUF
+        LD      C,0
+GACOPY: CP      'a'
+        JP      C,GASTOR
+        CP      'z'+1
+        JP      NC,GASTOR
+        SUB     20H
+GASTOR: LD      (DE),A
+        INC     DE
+        INC     C
+        LD      A,C
+        CP      15
+        JP      NC,GABAD
+        LD      A,B
+        OR      A
+        JP      Z,GAWORD
+        LD      A,(HL)
+        CP      ' '
+        JP      Z,GAWORD
+        INC     HL
+        DEC     B
+        JP      GACOPY
+GAWORD: XOR     A
+        LD      (DE),A
+        LD      A,(MODE)
+        OR      A
+        JP      NZ,GABAD
+        LD      DE,SCPM
+        CALL    ARGIS
+        JP      Z,GASET0
+        LD      DE,SH
+        CALL    ARGIS
+        LD      A,1
+        JP      Z,GASET
+        LD      DE,SHELP
+        CALL    ARGIS
+        LD      A,1
+        JP      Z,GASET
+        LD      DE,SINFO
+        CALL    ARGIS
+        LD      A,2
+        JP      Z,GASET
+        LD      DE,SVER
+        CALL    ARGIS
+        LD      A,3
+        JP      Z,GASET
+        LD      DE,SVERSION
+        CALL    ARGIS
+        LD      A,3
+        JP      NZ,GABAD
+GASET:  LD      (MODE),A
+        JP      GATRAIL
+GASET0: LD      A,4             ; remember that an option was consumed
+        LD      (MODE),A
+GATRAIL:LD     A,B
+        OR      A
+        JP      Z,GAGOOD
+        LD      A,(HL)
+        INC     HL
+        DEC     B
+        CP      ' '
+        JP      Z,GATRAIL
+GABAD:  SCF
+        RET
+GAGOOD: OR      A
+        RET
+
+ARGIS:  LD      HL,TOKBUF
+ARGIL:  LD      A,(DE)
+        CP      (HL)
+        RET     NZ
+        OR      A
+        RET     Z
+        INC     DE
+        INC     HL
+        JP      ARGIL
+
+; Call BDOS and freeze the returned machine state.  The stored SP is the
+; balanced post-call value; it is measured only after AF has been preserved.
+PROBE12:LD      C,FVER
+        LD      DE,0000H
+        CALL    BDOS
+        LD      (RETA),A
+        LD      (RETHL),HL
+        PUSH    BC
+        POP     HL
+        LD      (RETBC),HL
+        PUSH    DE
+        POP     HL
+        LD      (RETDE),HL
+        PUSH    AF
+        POP     HL
+        LD      (RETAF),HL       ; H is A, L is the flag byte
+        LD      HL,0
+        ADD     HL,SP
+        LD      (RETSP),HL
+        RET
+
+REPORT12:
+        LD      DE,RPTHEAD
+        CALL    PRINT
+        LD      DE,RA
+        CALL    PRINT
+        LD      A,(RETA)
+        CALL    HEX8
+        LD      DE,HSUFF
+        CALL    PRINT
+        LD      DE,RBC
+        CALL    PRINT
+        LD      HL,(RETBC)
+        CALL    HEX16
+        LD      DE,HSUFF
+        CALL    PRINT
+        LD      DE,RDE
+        CALL    PRINT
+        LD      HL,(RETDE)
+        CALL    HEX16
+        LD      DE,HSUFF
+        CALL    PRINT
+        LD      DE,RHL
+        CALL    PRINT
+        LD      HL,(RETHL)
+        CALL    HEX16
+        LD      DE,HSUFF
+        CALL    PRINT
+        LD      DE,RFL
+        CALL    PRINT
+        LD      HL,(RETAF)
+        LD      A,L
+        CALL    HEX8
+        LD      DE,HSUFF
+        CALL    PRINT
+        LD      DE,RSP
+        CALL    PRINT
+        LD      HL,(RETSP)
+        CALL    HEX16
+        LD      DE,HSUFF
+        CALL    PRINT
+        LD      DE,INTERP
+        CALL    PRINT
+        LD      HL,(RETHL)
+        LD      A,H
+        OR      A
+        JP      NZ,NONCPM
+        LD      A,L
+        PUSH    AF
+        RRCA
+        RRCA
+        RRCA
+        RRCA
+        AND     0FH
+        CALL    DIGIT
+        LD      A,'.'
+        CALL    PCHAR
+        POP     AF
+        AND     0FH
+        CALL    DIGIT
+        LD      DE,CRLF
+        JP      PRINT
+NONCPM: LD      DE,NONCPMT
+        JP      PRINT
+
+DIGIT:  ADD     A,'0'
+        CP      '9'+1
+        JP      C,PCHAR
+        ADD     A,7
+PCHAR:  PUSH    BC
+        PUSH    DE
+        LD      E,A
+        LD      C,2
+        CALL    BDOS
+        POP     DE
+        POP     BC
+        RET
+
+; dev1 - patch preserve the low byte while BDOS prints the high byte
+; The first version trusted function 2 to leave HL alone.  That happened on
+; one path but not in 8080 simulation, making a saved 0022H print as 0000H.
+HEX16:  PUSH    HL
+        LD      A,H
+        CALL    HEX8
+        POP     HL
+        LD      A,L
+HEX8:   PUSH    AF
+        RRCA
+        RRCA
+        RRCA
+        RRCA
+        AND     0FH
+        CALL    HEXNIB
+        POP     AF
+        AND     0FH
+HEXNIB: ADD     A,'0'
+        CP      '9'+1
+        JP      C,PCHAR
+        ADD     A,7
+        JP      PCHAR
+
+PRINT:  LD      C,FPRINT
+        JP      BDOS
+
+SHOWHELP:
+        LD      DE,HELPTXT
+        CALL    PRINT
+        JP      0000H
+SHOWINFO:
+        LD      DE,INFOTXT
+        CALL    PRINT
+        JP      0000H
+SHOWVER:
+        LD      DE,VERTXT
+        CALL    PRINT
+        JP      0000H
+BADARG: LD      DE,BADTXT
+        CALL    PRINT
+        JP      0000H
+
+MODE:   DB      0
+RETA:   DB      0
+RETHL:  DW      0
+RETBC:  DW      0
+RETDE:  DW      0
+RETAF:  DW      0
+RETSP:  DW      0
+TOKBUF: DS      16
+
+SCPM:   DB      '/CPM',0
+SH:     DB      '/H',0
+SHELP:  DB      '/HELP',0
+SINFO:  DB      '/INFO',0
+SVER:   DB      '/VER',0
+SVERSION:DB    '/VERSION',0
+
+BANNER: DB      13,10,'BDOSPROBE 0.1.0-dev1',13,10,'$'
+RPTHEAD:DB      13,10,'BDOS Function 12 - Return Version Number'
+        DB      13,10,13,10,'Input:',13,10
+        DB      '  C:     0CH',13,10
+        DB      '  DE:    0000H',13,10
+        DB      13,10,'Return:',13,10,'$'
+RA:     DB      '  A:     $'
+RBC:    DB      '  BC:    $'
+RDE:    DB      '  DE:    $'
+RHL:    DB      '  HL:    $'
+RFL:    DB      '  Flags: $'
+RSP:    DB      '  SP:    $'
+HSUFF:  DB      'H',13,10,'$'
+INTERP: DB      13,10,'Interpretation:',13,10,'  CP/M $'
+NONCPMT:DB     'Nonzero system-type byte; see raw HL.',13,10,'$'
+HELPTXT:DB     13,10,'BDOSPROBE - BDOS behavior probe harness',13,10
+        DB      'CP/M command name: BDOSPRB',13,10,13,10
+        DB      'BDOSPRB             Run the CP/M version probe',13,10
+        DB      'BDOSPRB /CPM        Run the CP/M version probe',13,10
+        DB      'BDOSPRB /H[ELP]     Command help',13,10
+        DB      'BDOSPRB /INFO       Build and safety information',13,10
+        DB      'BDOSPRB /VER[SION]  Version',13,10,'$'
+INFOTXT:DB     13,10,'BDOSPROBE dev1 contains only read-only BDOS function 12.'
+        DB      13,10,'A, BC, DE, HL, flags and SP are captured after return.'
+        DB      13,10,'Only documented results are interpreted.'
+        DB      13,10,'Built with ZSM4 and Digital Research LINK.',13,10,'$'
+VERTXT: DB      13,10,'BDOSPROBE 0.1.0-dev1',13,10,'$'
+BADTXT: DB      13,10,'BDOSPRB: invalid command. Use BDOSPRB /HELP.',13,10,'$'
+CRLF:   DB      13,10,'$'
+
+        DS      96
+STACKTOP:
+        END     START

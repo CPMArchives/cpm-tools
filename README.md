@@ -66,6 +66,15 @@ arguments, and heuristic Z80 prefix-byte findings. Verbose mode shows offsets.
 
 The current development release is `COMINFO 0.1.0-dev2`.
 
+### [BDOSPROBE](bdosprobe/)
+
+A CP/M-resident behavior probe for documented BDOS calls. The CP/M command is
+`BDOSPRB` to fit the eight-character filename limit. Dev1 invokes only the
+read-only Return Version Number call and captures the complete returned
+register state without treating incidental values as part of the interface.
+
+The current development release is `BDOSPROBE 0.1.0-dev1`.
+
 ## Planned tools
 
 ### BDOSTRACE
@@ -100,12 +109,13 @@ cd sysinfo
 See the README in each tool directory for its requirements and command-line
 interface.
 
-DISKINFO, DPBCHK, FSCK, DISKEDIT, and COMINFO are assembled natively under CP/M with ZSM4 and
+DISKINFO, DPBCHK, FSCK, DISKEDIT, COMINFO, and BDOSPROBE are assembled natively under CP/M with ZSM4 and
 Digital Research LINK. Running the project-level `./build.sh` builds them
 and produces one verified Montezuma Micro 80T SUPER DS DATA 880K image. The
 shared image contains every current utility and source file, the universal
 `BUILD.SUB`, and one copy each of ZSM4 and LINK. For example,
 `SUBMIT BUILD FSCK` rebuilds FSCK from `FSCK.MAC`.
+`SUBMIT BUILD BDOSPRB` rebuilds BDOSPROBE from `BDOSPRB.MAC`.
 
 ## License
 

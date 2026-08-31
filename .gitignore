@@ -10,5 +10,7 @@
 !diskedit/build/SHA256SUMS.txt
 !cominfo/build/COMINFO.COM
 !cominfo/build/SHA256SUMS.txt
+!bdosprobe/build/BDOSPRB.COM
+!bdosprobe/build/SHA256SUMS.txt
 *.log
 .DS_Store

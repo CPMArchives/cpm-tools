@@ -8,4 +8,5 @@ root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 "$root/fsck/build.sh"
 "$root/diskedit/build.sh"
 "$root/cominfo/build.sh"
+"$root/bdosprobe/build.sh"
 python3 "$root/tools/build_tools_image.py"
