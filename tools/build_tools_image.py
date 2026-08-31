@@ -253,7 +253,7 @@ def main() -> None:
             b"DPBCHK 0.1.0-dev2\r\n"
             b"FSCK 0.1.0-dev1\r\n"
             b"DISKEDIT 0.1.0-dev2\r\n"
-            b"COMINFO 0.1.0-dev1\r\n"
+            b"COMINFO 0.1.0-dev2\r\n"
             b"TYPE TOOLS.DOC for commands. SUBMIT BUILD toolname rebuilds.\r\n\x1A"
         )
         payload.append(note)

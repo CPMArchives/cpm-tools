@@ -117,17 +117,20 @@ Possible later work:
 
 ## COMINFO
 
-Current release: `0.1.0-dev1`.
+Current release: `0.1.0-dev2`.
 
-Dev1 reports logical CP/M file length and load range, direct CALL 0005H,
+Dev2 reports logical CP/M file length and load range, direct CALL 0005H,
 JMP 0000H and other page-zero address patterns, and heuristic Z80 prefix
-bytes. Verbose output identifies the file offset of each finding.
+bytes. It recognizes immediate MVI C BDOS function selection, symbolic CP/M
+2.2 function names, per-function counts, and adjacent LXI D arguments. Verbose
+output identifies the file offset of each finding.
 
 Near term:
 
 - Add conservative instruction decoding and control-flow traversal so code is
   distinguished from embedded data where possible.
-- Recognize common idioms which load a BDOS function number before CALL 0005H.
+- Recognize additional safe function-selection idioms without treating stale
+  register loads as current calls.
 - Report a useful minimum TPA requirement without confusing file length with
   runtime data, stack, or overlay requirements.
 

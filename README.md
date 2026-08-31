@@ -59,12 +59,12 @@ The current development release is `DISKEDIT 0.1.0-dev2`.
 
 ### [COMINFO](cominfo/)
 
-A read-only static inspector for CP/M transient programs. COMINFO reports a
+A read-only static inspector for CP/M transient programs. COMINFO dev2 reports a
 `.COM` file's logical length and load range, direct BDOS, warm-boot, and other
-page-zero references, and heuristic Z80 prefix-byte findings. Verbose mode
-shows the file offset of each result.
+page-zero references, symbolic immediate BDOS function calls and common DE
+arguments, and heuristic Z80 prefix-byte findings. Verbose mode shows offsets.
 
-The current development release is `COMINFO 0.1.0-dev1`.
+The current development release is `COMINFO 0.1.0-dev2`.
 
 ## Planned tools
 

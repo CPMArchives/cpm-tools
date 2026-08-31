@@ -214,7 +214,7 @@ been exercised on a range of CP/M BIOS implementations.
 
 PURPOSE
 
-COMINFO dev1 is a read-only static inspector for CP/M transient programs. It
+COMINFO dev2 is a read-only static inspector for CP/M transient programs. It
 reads a named COM file through standard BDOS sequential reads and reports its
 logical CP/M size, 0100H load range, public page-zero address patterns, and
 possible Z80 instruction-prefix bytes.
@@ -243,16 +243,23 @@ Page-zero references
     8080 instructions with a direct address below 0100H. /V prints the file
     offset of each pattern.
 
+BDOS function recognition
+    At a direct CALL 0005H, dev2 recognizes MVI C,function immediately before
+    the call. It also recognizes an adjacent LXI D,address placed before or
+    after MVI C. Reports give the symbolic CP/M 2.2 function name, per-function
+    count, and--under /V--the DE argument when present. Calls without one of
+    these exact idioms are retained as dynamic/unknown rather than guessed.
+
 Z80 prefix bytes
     CBH, DDH, EDH, and FDH bytes are counted as heuristic findings. They may
     be instructions or ordinary data and do not by themselves prove that the
     program requires a Z80.
 
-LIMITATIONS OF COMINFO DEV1
+LIMITATIONS OF COMINFO DEV2
 
-COMINFO dev1 is a byte-pattern inspector, not a disassembler or execution
+COMINFO dev2 is a byte-pattern inspector, not a disassembler or execution
 tracer. It does not follow control flow, identify dynamically constructed
-BDOS calls, prove CPU compatibility, calculate the resident system's actual
+BDOS function numbers, prove CPU compatibility, calculate the resident system's actual
 TPA, or distinguish embedded data from executable code. A reported direct
 reference is a definite byte pattern, not proof that the path is executed.
 

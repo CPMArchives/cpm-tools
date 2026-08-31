@@ -75,13 +75,23 @@ def main() -> None:
         run("cpmcp", "-f", "ibm-3740", str(disks / "drivec.dsk"),
             str(host_source), "0:COMINFO.MAC")
         sample = work / "SAMPLE.COM"
-        sample.write_bytes(
-            bytes((0xCD, 0x05, 0x00,       # definite CALL 0005H
-                   0xC3, 0x00, 0x00,       # definite JMP 0000H
-                   0x3A, 0x80, 0x00,       # direct page-zero reference
-                   0xED, 0x44))             # heuristic Z80 prefix
-            + bytes(256 - 11)
-        )
+        patterns = bytes((
+            0xCD, 0x05, 0x00,              # dynamic/unknown CALL 0005H
+            0xC3, 0x00, 0x00,              # definite JMP 0000H
+            0x3A, 0x80, 0x00,              # direct page-zero reference
+            0xED, 0x44,                    # heuristic Z80 prefix
+            0x0E, 15, 0xCD, 0x05, 0x00,   # MVI C,15 / CALL 5
+            0x11, 0x34, 0x12, 0x0E, 9,
+            0xCD, 0x05, 0x00,              # LXI D,1234 / MVI C,9 / CALL 5
+            0x0E, 26, 0x11, 0x00, 0x20,
+            0xCD, 0x05, 0x00,              # MVI C,26 / LXI D,2000 / CALL 5
+        ))
+        payload = bytearray(256)
+        payload[:len(patterns)] = patterns
+        payload[124:132] = bytes((
+            0x0E, 32, 0x11, 0x34, 0x12, 0xCD, 0x05, 0x00,
+        ))  # function idiom crossing the 128-byte DMA boundary
+        sample.write_bytes(payload)
         run("cpmcp", "-f", "ibm-3740", str(disks / "driveb.dsk"),
             str(sample), "0:SAMPLE.COM")
         for tool in ("ZSM4.COM", "LINK.COM"):
@@ -110,16 +120,24 @@ send -- "COMINFO SAMPLE.COM\\r"
 expect "Logical records:       2"
 expect "Logical bytes:         256"
 expect "Load range:            0100-01FF"
-expect "Definite CALL 0005H:   1"
+expect "Definite CALL 0005H:   5"
+expect "Immediate BDOS func:   4"
+expect "Dynamic/unknown calls: 1"
 expect "Definite JMP 0000H:    1"
 expect "Other page-zero refs:  1"
 expect "Z80 prefix bytes:      1"
 expect "B>"
 send -- "COMINFO SAMPLE.COM /VERBOSE\\r"
-expect "Offset 0000  definite CALL 0005H"
+expect "Offset 0000  BDOS ?  function dynamic/unknown"
 expect "Offset 0003  definite JMP 0000H"
 expect "Offset 0006  direct page-zero reference"
 expect "Offset 0009  heuristic Z80 prefix byte"
+expect "Offset 000D  BDOS 15 OPEN FILE  function immediate"
+expect "Offset 0015  BDOS 9 PRINT STRING  function immediate  DE=1234H"
+expect "Offset 001D  BDOS 26 SET DMA ADDRESS  function immediate  DE=2000H"
+expect "Offset 0081  BDOS 32 GET/SET USER CODE  function immediate  DE=1234H"
+expect "Recognized BDOS functions:"
+expect "15 OPEN FILE  count 1"
 expect "B>"
 send -- "COMINFO MISSING.COM\\r"
 expect "COMINFO: file not found."
@@ -131,7 +149,7 @@ send -- "COMINFO /INFO\\r"
 expect "Built with ZSM4 and Digital Research LINK."
 expect "B>"
 send -- "COMINFO /VERSION\\r"
-expect "COMINFO 0.1.0-dev1"
+expect "COMINFO 0.1.0-dev2"
 expect "B>"
 send -- "COMINFO SAMPLE.COM /V /INFO\\r"
 expect "COMINFO: invalid command. Use COMINFO /HELP."
@@ -146,8 +164,11 @@ close
         if (result.returncode or "Errors: 0" not in transcript
                 or "Logical bytes:         256" not in transcript
                 or "Load range:            0100-01FF" not in transcript
-                or "Definite CALL 0005H:   1" not in transcript
-                or "Offset 0009  heuristic Z80 prefix byte" not in transcript
+                or "Definite CALL 0005H:   5" not in transcript
+                or "Immediate BDOS func:   4" not in transcript
+                or "Offset 0015  BDOS 9 PRINT STRING" not in transcript
+                or "Offset 0081  BDOS 32 GET/SET USER CODE" not in transcript
+                or "15 OPEN FILE  count 1" not in transcript
                 or "COMINFO: file not found." not in transcript
                 or "Built with ZSM4" not in transcript):
             raise SystemExit(

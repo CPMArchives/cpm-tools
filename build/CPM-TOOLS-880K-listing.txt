@@ -1,6 +1,6 @@
   BUILD.SUB        25 bytes
-  COMINFO.COM    2560 bytes
-  COMINFO.MAC   16266 bytes
+  COMINFO.COM    3840 bytes
+  COMINFO.MAC   23703 bytes
   DISKEDIT.COM   5888 bytes
   DISKEDIT.MAC  31868 bytes
   DISKINFO.COM   3072 bytes
@@ -11,8 +11,8 @@
   FSCK.MAC      26962 bytes
   LINK.COM      15616 bytes
   README.TXT      210 bytes
-  ROADMAP.DOC    7041 bytes
+  ROADMAP.DOC    7217 bytes
   SYSINFO.ASM   50137 bytes
   SYSINFO.COM    7925 bytes
-  TOOLS.DOC     10644 bytes
+  TOOLS.DOC     11076 bytes
   ZSM4.COM      22400 bytes

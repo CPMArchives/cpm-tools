@@ -2,13 +2,13 @@
 ;
 ;***********************************************************************
 ;*                                                                     *
-;*                    C O M I N F O   --   DEV1                       *
+;*                    C O M I N F O   --   DEV2                       *
 ;*                                                                     *
 ;*              CP/M TRANSIENT PROGRAM INSPECTOR                      *
 ;*                                                                     *
 ;***********************************************************************
 ;
-; Version 0.1.0-dev1, 31 August 2026
+; Version 0.1.0-dev2, 31 August 2026
 ;
 ;       ZSM4 COMINFO=COMINFO
 ;       LINK COMINFO[A]
@@ -18,14 +18,16 @@
 ;       COMINFO file.COM
 ;       COMINFO file.COM /V
 ;
-; COMINFO reads a file sequentially through BDOS.  Dev1 reports its CP/M
+; COMINFO reads a file sequentially through BDOS.  Dev2 reports its CP/M
 ; logical length, 0100H load range, direct CALL 0005H and JMP 0000H
-; references, other direct references into page zero, and Z80 prefix bytes.
+; references, other direct references into page zero, Z80 prefix bytes, and
+; immediate BDOS function-selection idioms with common DE arguments.
 ; Prefix-byte results are explicitly heuristic: a static byte scan cannot
 ; prove that an apparent opcode is executable rather than data.
 ;
 ; Revision history:
 ;   dev1    logical size, load range and conservative reference scan
+;   dev2    immediate BDOS function and common DE argument recognition
 ;
 ; Programmer's notebook:
 ;   CP/M 2.2 records file length in 128-byte records, not bytes.  The byte
@@ -33,9 +35,9 @@
 ;   include a final record's application padding.  Files too large to fit at
 ;   0100H are reported rather than silently wrapping the address calculation.
 ;
-;   dev1 - patch keep two bytes from the preceding DMA record
+;   dev1 - patch keep bytes from the preceding DMA record
 ;   The first scanner discarded a three-byte instruction when it crossed a
-;   128-byte boundary.  PREV2 and PREV1 now make the stream continuous.
+;   128-byte boundary.  The rolling PREV history makes the stream continuous.
 ;
 ;***********************************************************************
 
@@ -206,8 +208,24 @@ SCANFILE:
         LD      (CWBOOT),HL
         LD      (CPAGE0),HL
         LD      (CZ80),HL
+        LD      (CBFUNC),HL
+        LD      (CBUNK),HL
         XOR     A
         LD      (WINCOUNT),A
+        LD      HL,FCOUNTS
+        LD      B,41
+SFFCLR:LD      (HL),0
+        INC     HL
+        DEC     B
+        JP      NZ,SFFCLR
+        XOR     A
+        LD      (PREV1),A
+        LD      (PREV2),A
+        LD      (PREV3),A
+        LD      (PREV4),A
+        LD      (PREV5),A
+        LD      (PREV6),A
+        LD      (PREV7),A
         LD      DE,DMABUF
         LD      C,FSETDMA
         CALL    BDOS
@@ -254,13 +272,20 @@ SBNPFX:LD      A,(WINCOUNT)
         JP      NC,SBWINDOW
         INC     A
         LD      (WINCOUNT),A
-        LD      A,(PREV1)
-        LD      (PREV2),A
-        LD      A,(CURBYTE)
-        LD      (PREV1),A
-        JP      SBOFF
+        JP      SBSHIFT
 SBWINDOW:
         CALL    CHECKWIN
+SBSHIFT:
+        LD      A,(PREV6)
+        LD      (PREV7),A
+        LD      A,(PREV5)
+        LD      (PREV6),A
+        LD      A,(PREV4)
+        LD      (PREV5),A
+        LD      A,(PREV3)
+        LD      (PREV4),A
+        LD      A,(PREV2)
+        LD      (PREV3),A
         LD      A,(PREV1)
         LD      (PREV2),A
         LD      A,(CURBYTE)
@@ -283,8 +308,7 @@ CHECKWIN:
         LD      HL,(CBDOS)
         INC     HL
         LD      (CBDOS),HL
-        LD      DE,VBDOSMSG
-        CALL    VERBOSE
+        CALL    ANALYZEBDOS
         RET
 CWWARM:LD      A,(PREV2)
         CP      0C3H
@@ -317,6 +341,125 @@ CWZERO:LD      A,(PREV2)
         LD      (CPAGE0),HL
         LD      DE,VPAGE0MSG
         CALL    VERBOSE
+        RET
+
+; Recognize the three short idioms most often emitted by 8080 assemblers:
+;
+;       MVI C,fn / CALL 5
+;       LXI D,arg / MVI C,fn / CALL 5
+;       MVI C,fn / LXI D,arg / CALL 5
+;
+; These establish C unambiguously if the byte sequence is executed.  Other
+; CALL 5 sites remain dynamic/unknown rather than being guessed from a stale
+; register load farther back in the file.
+ANALYZEBDOS:
+        XOR     A
+        LD      (BFKNOWN),A
+        LD      (BFARG),A
+        LD      A,(PREV4)
+        CP      00EH            ; MVI C immediately before CALL
+        JP      NZ,ABALT
+        LD      A,(PREV3)
+        LD      (BFUNC),A
+        LD      A,1
+        LD      (BFKNOWN),A
+        LD      A,(PREV7)
+        CP      011H            ; optional preceding LXI D,arg
+        JP      NZ,ABKNOWN
+        LD      A,(PREV6)
+        LD      (BFARGLO),A
+        LD      A,(PREV5)
+        LD      (BFARGHI),A
+        LD      A,1
+        LD      (BFARG),A
+        JP      ABKNOWN
+ABALT: LD      A,(PREV7)
+        CP      00EH            ; MVI C,fn then LXI D,arg
+        JP      NZ,ABUNKNOWN
+        LD      A,(PREV5)
+        CP      011H
+        JP      NZ,ABUNKNOWN
+        LD      A,(PREV6)
+        LD      (BFUNC),A
+        LD      A,(PREV4)
+        LD      (BFARGLO),A
+        LD      A,(PREV3)
+        LD      (BFARGHI),A
+        LD      A,1
+        LD      (BFKNOWN),A
+        LD      (BFARG),A
+ABKNOWN:
+        LD      HL,(CBFUNC)
+        INC     HL
+        LD      (CBFUNC),HL
+        LD      A,(BFUNC)
+        CP      41
+        JP      NC,ABVERB
+        LD      L,A
+        LD      H,0
+        LD      DE,FCOUNTS
+        ADD     HL,DE
+        INC     (HL)
+        JP      ABVERB
+ABUNKNOWN:
+        LD      HL,(CBUNK)
+        INC     HL
+        LD      (CBUNK),HL
+ABVERB:LD      A,(MODE)
+        CP      1
+        RET     NZ
+        LD      DE,VOFF
+        CALL    PRINT
+        LD      HL,(BYTEOFF)
+        DEC     HL
+        DEC     HL
+        CALL    PHEX16
+        LD      DE,VBDOSHEAD
+        CALL    PRINT
+        LD      A,(BFKNOWN)
+        OR      A
+        JP      Z,ABVUNK
+        LD      A,(BFUNC)
+        LD      L,A
+        LD      H,0
+        CALL    PDEC16
+        LD      A,' '
+        CALL    PCHAR
+        LD      A,(BFUNC)
+        CALL    FNLOOK
+        CALL    PRINT
+        LD      DE,VIMM
+        CALL    PRINT
+        LD      A,(BFARG)
+        OR      A
+        JP      Z,ABVEND
+        LD      DE,VDE
+        CALL    PRINT
+        LD      A,(BFARGHI)
+        LD      H,A
+        LD      A,(BFARGLO)
+        LD      L,A
+        CALL    PHEX16
+        LD      A,'H'
+        CALL    PCHAR
+        JP      ABVEND
+ABVUNK:LD      DE,VUNKNOWN
+        CALL    PRINT
+ABVEND:JP      PCRLF
+
+; Return the printable name for function A in DE.  Entries 38 and 39 are
+; deliberately labelled unassigned for a plain CP/M 2.2 interpretation.
+FNLOOK:CP      41
+        LD      DE,BFOTHER
+        RET     NC
+        LD      L,A
+        LD      H,0
+        ADD     HL,HL
+        LD      DE,BFNTAB
+        ADD     HL,DE
+        LD      E,(HL)
+        INC     HL
+        LD      D,(HL)
         RET
 
 ; Direct 16-bit address operands in the 8080 instruction set.
@@ -437,6 +580,12 @@ RCOUNTS:
         LD      DE,MBDOS
         LD      HL,(CBDOS)
         CALL    PDECVAL
+        LD      DE,MBFUNC
+        LD      HL,(CBFUNC)
+        CALL    PDECVAL
+        LD      DE,MBUNK
+        LD      HL,(CBUNK)
+        CALL    PDECVAL
         LD      DE,MWBOOT
         LD      HL,(CWBOOT)
         CALL    PDECVAL
@@ -446,8 +595,53 @@ RCOUNTS:
         LD      DE,MZ80
         LD      HL,(CZ80)
         CALL    PDECVAL
+        CALL    PRINTFLIST
         LD      DE,MNOTE
         JP      PRINT
+
+PRINTFLIST:
+        LD      HL,(CBFUNC)
+        LD      A,H
+        OR      L
+        RET     Z
+        LD      DE,MFHEAD
+        CALL    PRINT
+        XOR     A
+        LD      (FLINDEX),A
+PFLNEXT:
+        LD      A,(FLINDEX)
+        CP      41
+        RET     Z
+        LD      L,A
+        LD      H,0
+        LD      DE,FCOUNTS
+        ADD     HL,DE
+        LD      A,(HL)
+        OR      A
+        JP      Z,PFLINC
+        LD      (FLCOUNT),A
+        LD      DE,MFROW
+        CALL    PRINT
+        LD      A,(FLINDEX)
+        LD      L,A
+        LD      H,0
+        CALL    PDEC16
+        LD      A,' '
+        CALL    PCHAR
+        LD      A,(FLINDEX)
+        CALL    FNLOOK
+        CALL    PRINT
+        LD      DE,MFCOUNT
+        CALL    PRINT
+        LD      A,(FLCOUNT)
+        LD      L,A
+        LD      H,0
+        CALL    PDEC16
+        CALL    PCRLF
+PFLINC:LD      A,(FLINDEX)
+        INC     A
+        LD      (FLINDEX),A
+        JP      PFLNEXT
 
 PFILENAME:
         LD      HL,FCB+1
@@ -574,7 +768,7 @@ PRINTEXIT:
         CALL    PRINT
         JP      0000H
 
-TITLE:  DB      13,10,'COMINFO 0.1.0-dev1  File $'
+TITLE:  DB      13,10,'COMINFO 0.1.0-dev2  File $'
 CRLF:   DB      13,10,'$'
 MRECORDS:DB    13,10,'Logical records:       $'
 MBYTES: DB      'Logical bytes:         $'
@@ -583,26 +777,34 @@ MDASH:  DB      '-$'
 MEMPTY: DB      'EMPTY',13,10,'$'
 MOVER:  DB      'INVALID (exceeds FFFFH)',13,10,'$'
 MBDOS:  DB      'Definite CALL 0005H:   $'
+MBFUNC: DB      'Immediate BDOS func:   $'
+MBUNK:  DB      'Dynamic/unknown calls: $'
 MWBOOT: DB      'Definite JMP 0000H:    $'
 MPAGE0: DB      'Other page-zero refs:  $'
 MZ80:   DB      'Z80 prefix bytes:      $'
-MNOTE:  DB      13,10,'Prefix count is heuristic; references are byte-pattern findings.',13,10,'$'
+MFHEAD: DB      13,10,'Recognized BDOS functions:',13,10,'$'
+MFROW:  DB      '  $'
+MFCOUNT:DB      '  count $'
+MNOTE:  DB      13,10,'Static findings describe byte patterns, not proven execution.',13,10,'$'
 VOFF:   DB      '  Offset $'
-VBDOSMSG:DB    '  definite CALL 0005H',13,10,'$'
+VBDOSHEAD:DB   '  BDOS $'
+VIMM:   DB      '  function immediate$'
+VDE:    DB      '  DE=$'
+VUNKNOWN:DB    '?  function dynamic/unknown$'
 VWBOOTMSG:DB   '  definite JMP 0000H',13,10,'$'
 VPAGE0MSG:DB   '  direct page-zero reference',13,10,'$'
 VZ80MSG:DB     '  heuristic Z80 prefix byte',13,10,'$'
-HELPMSG:DB      13,10,'COMINFO 0.1.0-dev1',13,10,13,10
+HELPMSG:DB      13,10,'COMINFO 0.1.0-dev2',13,10,13,10
         DB      '  COMINFO file.COM           Analyze a transient program',13,10
         DB      '  COMINFO file.COM /V        Detailed findings (also /VERBOSE)',13,10
         DB      '  COMINFO /H                 Command help (also /HELP)',13,10
         DB      '  COMINFO /INFO              Show build information',13,10
         DB      '  COMINFO /VER               Show version (also /VERSION)',13,10,'$'
-INFOMSG:DB      13,10,'COMINFO 0.1.0-dev1',13,10
+INFOMSG:DB      13,10,'COMINFO 0.1.0-dev2',13,10
         DB      'Read-only CP/M transient-program inspector.',13,10
         DB      'Built with ZSM4 and Digital Research LINK.',13,10
         DB      '8080-compatible analyzer; source revision 31 August 2026.',13,10,'$'
-VERMSG:DB       13,10,'COMINFO 0.1.0-dev1',13,10,'$'
+VERMSG:DB       13,10,'COMINFO 0.1.0-dev2',13,10,'$'
 BADMSG: DB      13,10,'COMINFO: invalid command. Use COMINFO /HELP.',13,10,'$'
 NOFILEMSG:DB    13,10,'COMINFO: a COM filename is required.',13,10,'$'
 OPENMSG:DB      13,10,'COMINFO: file not found.',13,10,'$'
@@ -615,6 +817,54 @@ SINFO:  DB      '/INFO',0
 SVER:   DB      '/VER',0
 SVERSION:DB    '/VERSION',0
 
+BFNTAB:DW      BF0,BF1,BF2,BF3,BF4,BF5,BF6,BF7,BF8,BF9
+        DW      BF10,BF11,BF12,BF13,BF14,BF15,BF16,BF17,BF18,BF19
+        DW      BF20,BF21,BF22,BF23,BF24,BF25,BF26,BF27,BF28,BF29
+        DW      BF30,BF31,BF32,BF33,BF34,BF35,BF36,BF37,BF38,BF39
+        DW      BF40
+BF0:    DB      'SYSTEM RESET$'
+BF1:    DB      'CONSOLE INPUT$'
+BF2:    DB      'CONSOLE OUTPUT$'
+BF3:    DB      'READER INPUT$'
+BF4:    DB      'PUNCH OUTPUT$'
+BF5:    DB      'LIST OUTPUT$'
+BF6:    DB      'DIRECT CONSOLE I/O$'
+BF7:    DB      'GET I/O BYTE$'
+BF8:    DB      'SET I/O BYTE$'
+BF9:    DB      'PRINT STRING$'
+BF10:   DB      'READ CONSOLE BUFFER$'
+BF11:   DB      'CONSOLE STATUS$'
+BF12:   DB      'RETURN VERSION$'
+BF13:   DB      'RESET DISK SYSTEM$'
+BF14:   DB      'SELECT DISK$'
+BF15:   DB      'OPEN FILE$'
+BF16:   DB      'CLOSE FILE$'
+BF17:   DB      'SEARCH FIRST$'
+BF18:   DB      'SEARCH NEXT$'
+BF19:   DB      'DELETE FILE$'
+BF20:   DB      'READ SEQUENTIAL$'
+BF21:   DB      'WRITE SEQUENTIAL$'
+BF22:   DB      'MAKE FILE$'
+BF23:   DB      'RENAME FILE$'
+BF24:   DB      'RETURN LOGIN VECTOR$'
+BF25:   DB      'RETURN CURRENT DISK$'
+BF26:   DB      'SET DMA ADDRESS$'
+BF27:   DB      'GET ALLOCATION ADDRESS$'
+BF28:   DB      'WRITE PROTECT DISK$'
+BF29:   DB      'GET READ-ONLY VECTOR$'
+BF30:   DB      'SET FILE ATTRIBUTES$'
+BF31:   DB      'GET DPB ADDRESS$'
+BF32:   DB      'GET/SET USER CODE$'
+BF33:   DB      'READ RANDOM$'
+BF34:   DB      'WRITE RANDOM$'
+BF35:   DB      'COMPUTE FILE SIZE$'
+BF36:   DB      'SET RANDOM RECORD$'
+BF37:   DB      'RESET DRIVE$'
+BF38:   DB      'UNASSIGNED 38$'
+BF39:   DB      'UNASSIGNED 39$'
+BF40:   DB      'WRITE RANDOM ZERO FILL$'
+BFOTHER:DB     'UNKNOWN FUNCTION$'
+
 MODE:   DB      0
 FILESEEN:DB    0
 TOKBUF: DS      20
@@ -625,7 +875,22 @@ CBDOS:  DW      0
 CWBOOT: DW      0
 CPAGE0: DW      0
 CZ80:   DW      0
+CBFUNC: DW      0
+CBUNK:  DW      0
+FCOUNTS:DS     41
+FLINDEX:DB     0
+FLCOUNT:DB     0
+BFKNOWN:DB     0
+BFUNC:  DB      0
+BFARG:  DB      0
+BFARGLO:DB     0
+BFARGHI:DB     0
 WINCOUNT:DB    0
+PREV7: DB      0
+PREV6: DB      0
+PREV5: DB      0
+PREV4: DB      0
+PREV3: DB      0
 PREV2: DB      0
 PREV1: DB      0
 CURBYTE:DB     0
