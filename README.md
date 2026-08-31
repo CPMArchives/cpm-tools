@@ -7,6 +7,11 @@ Each utility is maintained in its own directory with its source, build script,
 documentation, tests, and current CP/M executable. The tools are deliberately
 kept independent so that users can build or copy only the programs they need.
 
+The complete operator reference is [TOOLS.DOC](docs/TOOLS.DOC). The shared
+CP/M image contains the same manual for use with `TYPE TOOLS.DOC`.
+Future development is tracked separately in the [project roadmap](ROADMAP.md);
+the tools image carries the same text as `ROADMAP.DOC`.
+
 ## Available tools
 
 ### [SYSINFO](sysinfo/)
@@ -16,14 +21,72 @@ application-visible CP/M state, including memory vectors, disk parameters,
 drive allocation, free space, the standard BIOS jump table, and structural
 health checks.
 
-The current development release is
-[`SYSINFO 1.0.0-dev7`](https://github.com/CPMArchives/cpm-tools/releases/tag/v1.0.0-dev7).
+The current development release is `SYSINFO 1.0.0-dev8`.
+
+### [DISKINFO](diskinfo/)
+
+A read-only disk-structure utility. DISKINFO reports the selected drive's
+Disk Parameter Header pointers, complete CP/M 2.2 Disk Parameter Block,
+derived filesystem geometry, and current allocation totals.
+
+The current development release is `DISKINFO 0.1.0-dev4`.
+
+### [DPBCHK](dpbchk/)
+
+A read-only disk-parameter validator. DPBCHK checks block and extent
+geometry, allocation limits, directory reservation, checksum-vector size,
+and required DPH pointers for internal consistency.
+
+The current development release is `DPBCHK 0.1.0-dev2`.
+
+### [FSCK](fsck/)
+
+A read-only filesystem consistency checker. FSCK examines raw directory
+entries and allocation lists for malformed user numbers and record counts,
+invalid block references, directory-block references, and duplicate block
+ownership. A verbose mode displays the entries and individual findings.
+
+The current development release is `FSCK 0.1.0-dev1`.
+
+### [DISKEDIT](diskedit/)
+
+A read-only, CP/M-resident, filesystem-aware sector browser. DISKEDIT dev2
+displays each 128-byte sector in hexadecimal and ASCII, identifies its track,
+translated sector and structural region, and shows allocation-block ownership
+for DATA sectors.
+
+The current development release is `DISKEDIT 0.1.0-dev2`.
+
+### [COMINFO](cominfo/)
+
+A read-only static inspector for CP/M transient programs. COMINFO reports a
+`.COM` file's logical length and load range, direct BDOS, warm-boot, and other
+page-zero references, and heuristic Z80 prefix-byte findings. Verbose mode
+shows the file offset of each result.
+
+The current development release is `COMINFO 0.1.0-dev1`.
 
 ## Planned tools
 
-The collection is intended to grow with focused utilities such as MEMINFO and
-DISKINFO. Their directories will be added when their behavior and interfaces
-are ready to be maintained publicly.
+### BDOSTRACE
+
+A runtime tracer for BDOS calls made by another transient program. BDOSTRACE
+will record function numbers and significant arguments while passing calls to
+the real BDOS without changing the observed program behavior.
+
+### BIOSINFO
+
+A possible deep BIOS inspector covering the complete jump table, shared or
+stub entry points, disk-selection structures, sector translation, and device
+routines. It will remain part of SYSINFO instead if the useful scope is not
+substantial enough for a separate utility.
+
+### MEMINFO
+
+A possible detailed memory-layout inspector covering page zero, the TPA,
+CCP, BDOS, BIOS, default FCBs and DMA, and unusual low-memory modifications.
+It is lower priority because much of this information may properly remain in
+SYSINFO.
 
 ## Building
 
@@ -36,6 +99,13 @@ cd sysinfo
 
 See the README in each tool directory for its requirements and command-line
 interface.
+
+DISKINFO, DPBCHK, FSCK, DISKEDIT, and COMINFO are assembled natively under CP/M with ZSM4 and
+Digital Research LINK. Running the project-level `./build.sh` builds them
+and produces one verified Montezuma Micro 80T SUPER DS DATA 880K image. The
+shared image contains every current utility and source file, the universal
+`BUILD.SUB`, and one copy each of ZSM4 and LINK. For example,
+`SUBMIT BUILD FSCK` rebuilds FSCK from `FSCK.MAC`.
 
 ## License
 
