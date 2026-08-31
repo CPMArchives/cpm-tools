@@ -18,7 +18,7 @@ The CP/M executable is `BDOSPRB.COM`, shortened to fit the 8.3 filename limit.
 | Persistent write | create, write, delete, rename, set attributes | Excluded from ordinary probes. Any future destructive suite must be separate, explicit, and run only on disposable media. |
 | Termination or reset | warm boot, terminate, reset disk system | Excluded until an isolated child-probe design can preserve and report results safely. |
 
-## Dev3 boundary
+## Dev4 boundary
 
 Dev1 established function 12. Dev2 also admits functions 11, 24, 25, 27, 29,
 and 31, grouped as `/CONSOLE`, `/DISK`, and `/MEM`. Before each call it reports
@@ -37,18 +37,30 @@ sentinel. `/USER` performs two query-only calls, reports the returned user
 number, and compares the results as an unchanged-state check. The set-user
 form is not present.
 
+Dev4 admits function 14 only through `/SELECT`. The probe first obtains the
+current drive from function 25, snapshots the login and read-only vectors,
+passes that same drive number to function 14, and samples all three public
+values again. It neither accepts a drive argument nor contains a path for
+selecting a different drive. A changed value is reported as a warning.
+
 ## Validation record
 
-Dev2 has been assembled with ZSM4 and Digital Research LINK and executed under
+Dev3 has been assembled with ZSM4 and Digital Research LINK and executed under
 z80pack in both Z80 and Intel 8080 modes. It has also been exercised on
 Montezuma Micro CP/M 2.2 in the TRS-80 emulator. On that system the version
 probe returned A=22H and HL=0022H; the current drive was B; the read-only
 vector was 0000H; the allocation-vector and DPB addresses were F77DH and
 F5F8H; and console status reported no pending character. Values such as flags,
 SP, and undocumented return registers are observations, not required results.
+The `/USER` probe subsequently reported user 0 and user 3 correctly on the
+same system and confirmed that repeated query-form calls left both unchanged.
+Dev4 `/SELECT` was then run with A and B as the current drive. Function 14
+received E=00H and E=01H respectively; both runs preserved the current drive,
+login vector 0003H, and read-only vector 0000H.
 
 ## Planned sequence
 
 1. Compare the observational returns across additional CP/M-compatible systems.
-2. Design save/restore guards before admitting any reversible state change.
+2. Design explicit restoration before admitting a probe which selects a
+   different state value.
 3. Keep persistent writes, termination, and reset outside the ordinary probe.

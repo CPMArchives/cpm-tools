@@ -36,6 +36,10 @@ Current release: `0.1.0-dev4`.
 
 Near term:
 
+- Add a compact `/MAP` report showing directory, active-data, recoverable
+  deleted-data, overwritten-deleted-data, and free allocation blocks. The
+  deleted categories must be labeled as directory evidence rather than a
+  guarantee that old contents remain recoverable.
 - Report more detail about the logical-to-physical sector translation table.
 - Expand the explanation of extent geometry and allocation-number width.
 - Test unusual but valid DPBs, including small disks and nonstandard directory
@@ -145,20 +149,24 @@ COMINFO is not intended to become a general disassembler.
 
 ## BDOSPROBE
 
-Current release: `0.1.0-dev3` (`BDOSPRB.COM` under CP/M).
+Current release: `0.1.0-dev4` (`BDOSPRB.COM` under CP/M).
 
 Dev1 provided the common result-capture harness and version probe. Dev2 adds
 console status; login, current-disk and read-only vectors; and allocation-vector
 and DPB addresses. It records A, BC, DE, HL, flags, and SP, while interpreting
 only documented results. Dev3 adds function 32 strictly in query mode and
-checks that repeated queries leave the user number unchanged. Admission rules
-are in `docs/BDOSPROBE-DESIGN.md`.
+checks that repeated queries leave the user number unchanged. Dev4 obtains the
+current drive, selects only that same drive, and compares the current drive,
+login vector, and read-only vector before and after. Admission rules are in
+`docs/BDOSPROBE-DESIGN.md`.
 
 Near term:
 
-- Compare dev3 behavior on additional CP/M-compatible systems used during
-  BetterCP/M development. Montezuma Micro CP/M 2.2 and both z80pack CPU modes
-  have been exercised successfully.
+- Compare dev4 behavior on additional CP/M-compatible systems used during
+  BetterCP/M development. Both z80pack CPU modes have passed. On Montezuma
+  Micro CP/M 2.2, dev3 `/USER` passed in user areas 0 and 3, and dev4 `/SELECT`
+  passed from current drives A and B without changing the selected drive,
+  login vector 0003H, or read-only vector 0000H.
 
 Possible later work:
 
@@ -213,3 +221,8 @@ and detection of unusual low-memory modifications.
   available.
 - Reuse proven support routines where practical while keeping each utility
   independently buildable.
+- Study historical utilities for operator-interface and diagnostic ideas while
+  retaining an independent implementation. DISKSTAT's allocation map, deleted
+  block accounting, large-disk arithmetic fixes, and CP/M 3/MP/M structure
+  handling are useful reference points; CP/M 3 and MP/M remain later
+  portability work rather than current CP/M 2.2 scope.

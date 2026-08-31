@@ -2,13 +2,13 @@
 ;
 ;***********************************************************************
 ;*                                                                     *
-;*                    B D O S P R O B E   --   DEV3                  *
+;*                    B D O S P R O B E   --   DEV4                  *
 ;*                                                                     *
 ;*                  BDOS BEHAVIOR PROBE HARNESS                       *
 ;*                                                                     *
 ;***********************************************************************
 ;
-; Version 0.1.0-dev3, 31 August 2026
+; Version 0.1.0-dev4, 31 August 2026
 ;
 ;       ZSM4 BDOSPRB=BDOSPRB
 ;       LINK BDOSPRB[A]
@@ -20,9 +20,9 @@
 ;
 ; BDOSPROBE records the register-level behavior of selected BDOS calls.
 ; The CP/M command name is BDOSPRB because a CP/M filename has no more
-; than eight characters.  Dev3 contains only observational calls: console
-; status, version, disk vectors, allocation-vector and DPB addresses, and
-; the function 32 query-only form for the current user number.
+; than eight characters.  Dev4 adds the first guarded state probe.  /SELECT
+; obtains the current drive, selects that same drive, then checks that the
+; current drive, login vector and read-only vector are unchanged.
 ;
 ; The result-capture routine saves A, BC, DE, HL, flags and SP immediately
 ; after BDOS returns.  Only A and HL are documented results of function 12;
@@ -32,6 +32,7 @@
 ;   dev1    first result-capture harness and /CPM version probe
 ;   dev2    observational /DISK, /MEM and /CONSOLE probe groups
 ;   dev3    function 32 query-only /USER probe with state check
+;   dev4    guarded select-current-drive probe with before/after checks
 ;
 ; Programmer's notebook:
 ;   Save HL before using it to copy the other registers.  Save AF before
@@ -66,6 +67,8 @@ START:  LD      SP,STACKTOP
         JP      Z,DOCONS
         CP      8
         JP      Z,DOUSER
+        CP      9
+        JP      Z,DOSELECT
         LD      DE,BANNER
         CALL    PRINT
         CALL    PROBE12
@@ -132,6 +135,10 @@ GAWORD: XOR     A
         LD      DE,SUSER
         CALL    ARGIS
         LD      A,8
+        JP      Z,GASET
+        LD      DE,SSELECT
+        CALL    ARGIS
+        LD      A,9
         JP      Z,GASET
         LD      DE,SH
         CALL    ARGIS
@@ -313,6 +320,105 @@ DOUSER: LD      DE,BANNER
         JP      Z,DUOUT
         LD      DE,M32BAD
 DUOUT:  CALL    PRINT
+        JP      0000H
+
+; dev4 - exercise a reversible call without changing to a different drive
+; Function 25 supplies the only drive number passed to function 14.  Login
+; and read-only vectors are sampled on both sides so the unchanged-state
+; claim is based on documented public state rather than an assumed result.
+DOSELECT:
+        LD      DE,BANNER
+        CALL    PRINT
+        LD      A,25
+        CALL    PROBE
+        LD      A,(RETA)
+        LD      (DRVBEF),A
+        LD      A,24
+        CALL    PROBE
+        LD      HL,(RETHL)
+        LD      (LOGBEF),HL
+        LD      A,29
+        CALL    PROBE
+        LD      HL,(RETHL)
+        LD      (ROBEF),HL
+
+        LD      A,(DRVBEF)
+        LD      E,A
+        LD      D,0
+        LD      A,14
+        CALL    PROBEDE
+        LD      DE,H14
+        CALL    REPORTRAW
+
+        LD      A,25
+        CALL    PROBE
+        LD      A,(RETA)
+        LD      (DRVAFT),A
+        LD      A,24
+        CALL    PROBE
+        LD      HL,(RETHL)
+        LD      (LOGAFT),HL
+        LD      A,29
+        CALL    PROBE
+        LD      HL,(RETHL)
+        LD      (ROAFT),HL
+
+        LD      DE,M14
+        CALL    PRINT
+        LD      A,(DRVBEF)
+        ADD     A,'A'
+        CALL    PCHAR
+        LD      DE,MAFTER
+        CALL    PRINT
+        LD      A,(DRVAFT)
+        ADD     A,'A'
+        CALL    PCHAR
+        LD      DE,MLOGIN
+        CALL    PRINT
+        LD      HL,(LOGBEF)
+        CALL    HEX16
+        LD      DE,MAFTER
+        CALL    PRINT
+        LD      HL,(LOGAFT)
+        CALL    HEX16
+        LD      DE,MRO
+        CALL    PRINT
+        LD      HL,(ROBEF)
+        CALL    HEX16
+        LD      DE,MAFTER
+        CALL    PRINT
+        LD      HL,(ROAFT)
+        CALL    HEX16
+        LD      DE,CRLF
+        CALL    PRINT
+
+        LD      A,(DRVBEF)
+        LD      B,A
+        LD      A,(DRVAFT)
+        CP      B
+        JP      NZ,DSBAD
+        LD      HL,(LOGAFT)
+        EX      DE,HL
+        LD      HL,(LOGBEF)
+        LD      A,H
+        CP      D
+        JP      NZ,DSBAD
+        LD      A,L
+        CP      E
+        JP      NZ,DSBAD
+        LD      HL,(ROAFT)
+        EX      DE,HL
+        LD      HL,(ROBEF)
+        LD      A,H
+        CP      D
+        JP      NZ,DSBAD
+        LD      A,L
+        CP      E
+        JP      NZ,DSBAD
+        LD      DE,M14OK
+        JP      DSOUT
+DSBAD:  LD      DE,M14BAD
+DSOUT:  CALL    PRINT
         JP      0000H
 
 ; Common raw report.  This intentionally prints more than the documented
@@ -503,6 +609,12 @@ MODE:   DB      0
 CALLNO: DB      0
 CALLDE: DW      0
 USER1:  DB      0
+DRVBEF: DB      0
+DRVAFT: DB      0
+LOGBEF: DW      0
+LOGAFT: DW      0
+ROBEF:  DW      0
+ROAFT:  DW      0
 RETA:   DB      0
 RETHL:  DW      0
 RETBC:  DW      0
@@ -516,14 +628,16 @@ SDISK:  DB      '/DISK',0
 SMEM:   DB      '/MEM',0
 SCONS:  DB      '/CONSOLE',0
 SUSER:  DB      '/USER',0
+SSELECT:DB     '/SELECT',0
 SH:     DB      '/H',0
 SHELP:  DB      '/HELP',0
 SINFO:  DB      '/INFO',0
 SVER:   DB      '/VER',0
 SVERSION:DB    '/VERSION',0
 
-BANNER: DB      13,10,'BDOSPROBE 0.1.0-dev3',13,10,'$'
+BANNER: DB      13,10,'BDOSPROBE 0.1.0-dev4',13,10,'$'
 H11:    DB      13,10,'BDOS Function 11 - Console Status','$'
+H14:    DB      13,10,'BDOS Function 14 - Select Disk','$'
 H24:    DB      13,10,'BDOS Function 24 - Return Login Vector','$'
 H25:    DB      13,10,'BDOS Function 25 - Return Current Disk','$'
 H27:    DB      13,10,'BDOS Function 27 - Get Allocation Vector Address','$'
@@ -543,6 +657,12 @@ M31:    DB      13,10,'Interpretation:',13,10,'  DPB address: $'
 M32:    DB      13,10,'Interpretation:',13,10,'  Current user: $'
 M32OK:  DB      '  Query left user number unchanged.',13,10,'$'
 M32BAD: DB      '  WARNING: user number changed between queries.',13,10,'$'
+M14:    DB      13,10,'State check:',13,10,'  Drive before: $'
+MAFTER: DB      '  after: $'
+MLOGIN: DB      13,10,'  Login vector before: $'
+MRO:    DB      13,10,'  Read-only vector before: $'
+M14OK:  DB      '  Same-drive selection left public state unchanged.',13,10,'$'
+M14BAD: DB      '  WARNING: public disk state changed.',13,10,'$'
 RPTHEAD:DB      13,10,'BDOS Function 12 - Return Version Number'
         DB      13,10,13,10,'Input:',13,10
         DB      '  C:     0CH',13,10
@@ -565,14 +685,15 @@ HELPTXT:DB     13,10,'BDOSPROBE - BDOS behavior probe harness',13,10
         DB      'BDOSPRB /MEM        Allocation and DPB addresses',13,10
         DB      'BDOSPRB /CONSOLE    Console status',13,10
         DB      'BDOSPRB /USER       Current user (query only)',13,10
+        DB      'BDOSPRB /SELECT     Select current drive; verify state',13,10
         DB      'BDOSPRB /H[ELP]     Command help',13,10
         DB      'BDOSPRB /INFO       Build and safety information',13,10
         DB      'BDOSPRB /VER[SION]  Version',13,10,'$'
-INFOTXT:DB     13,10,'BDOSPROBE dev3 contains only observational BDOS calls.'
+INFOTXT:DB     13,10,'BDOSPROBE dev4 adds guarded same-drive selection.'
         DB      13,10,'A, BC, DE, HL, flags and SP are captured after return.'
-        DB      13,10,'Only documented results are interpreted.'
+        DB      13,10,'Current drive and vectors are checked before and after.'
         DB      13,10,'Built with ZSM4 and Digital Research LINK.',13,10,'$'
-VERTXT: DB      13,10,'BDOSPROBE 0.1.0-dev3',13,10,'$'
+VERTXT: DB      13,10,'BDOSPROBE 0.1.0-dev4',13,10,'$'
 BADTXT: DB      13,10,'BDOSPRB: invalid command. Use BDOSPRB /HELP.',13,10,'$'
 CRLF:   DB      13,10,'$'
 

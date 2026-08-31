@@ -1,5 +1,18 @@
 # BDOSPROBE changelog
 
+## 0.1.0-dev4 — 2026-08-31
+
+- Added `/SELECT`, the first guarded reversible-state probe.
+- Obtained the current drive with function 25 and passed only that same drive
+  to function 14.
+- Compared the current drive, login vector, and read-only vector before and
+  after selection and reported any change.
+- Recorded successful dev3 `/USER` tests in user areas 0 and 3 under Montezuma
+  Micro CP/M 2.2.
+- Validated `/SELECT` from current drives A and B under Montezuma Micro CP/M
+  2.2. Both runs preserved the selected drive, login vector 0003H, and
+  read-only vector 0000H.
+
 ## 0.1.0-dev3 — 2026-08-31
 
 - Added `/USER` using function 32 only with the documented E=FFH query

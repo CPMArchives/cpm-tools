@@ -271,8 +271,9 @@ PURPOSE
 
 BDOSPROBE records the register-level result of selected documented BDOS calls.
 The CP/M program is named BDOSPRB.COM because CP/M filenames have an
-eight-character stem. Dev3 contains only observational version, console,
-disk-state, allocation-vector, DPB, and current-user query calls.
+eight-character stem. Dev4 contains observational version, console,
+disk-state, allocation-vector, DPB, and current-user query calls plus one
+guarded same-drive selection probe.
 
 COMMANDS
 
@@ -282,13 +283,14 @@ COMMANDS
     BDOSPRB /MEM            Allocation-vector and DPB addresses
     BDOSPRB /CONSOLE        Console input status
     BDOSPRB /USER           Current user number (query only)
+    BDOSPRB /SELECT         Select current drive and verify public state
     BDOSPRB /H              Command help (also /HELP)
     BDOSPRB /INFO           Build and safety information
     BDOSPRB /VER            Version (also /VERSION)
 
-DEV3 REPORT
+DEV4 REPORT
 
-Every probe shows its function number and DE input. On return, dev3 reports A,
+Every probe shows its function number and DE input. On return, dev4 reports A,
 BC, DE, HL, the condition flags, and the balanced stack pointer. It interprets
 only the documented result for that call. Other values are raw observations
 which may help compare implementations; they are not advertised as CP/M
@@ -301,12 +303,20 @@ to the safety matrix in BDOSPROBE-DESIGN.md in the source repository. Pure
 observations come first; writes, reset, and termination remain excluded from
 the ordinary probe.
 
+`/SELECT` first obtains the current drive with function 25. It snapshots the
+login and read-only vectors, passes only that same drive number to function 14,
+and compares all three values afterward. It accepts no drive argument and has
+no path for selecting a different drive. Any change is reported as a warning.
+
 VALIDATION
 
-Dev2 has passed native ZSM4/LINK builds and execution under z80pack in Z80 and
-Intel 8080 modes. It has also been exercised successfully on Montezuma Micro
-CP/M 2.2 in the TRS-80 emulator. Raw flags, SP, and undocumented registers may
-differ between implementations and are not conformance requirements.
+Dev4 has passed native ZSM4/LINK builds and execution under z80pack in Z80 and
+Intel 8080 modes. Dev3 `/USER` has also been exercised successfully in user
+areas 0 and 3 on Montezuma Micro CP/M 2.2 in the TRS-80 emulator. Raw flags,
+SP, and undocumented registers may differ between implementations and are not
+conformance requirements. On that same Montezuma system, dev4 `/SELECT` passed
+from current drives A and B. Both runs preserved the selected drive, login
+vector 0003H, and read-only vector 0000H.
 
 
 9. BUILDING THE NATIVE TOOLS
